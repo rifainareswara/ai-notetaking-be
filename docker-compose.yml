@@ -1,0 +1,11 @@
+services:
+  # 1. Layanan Backend (Go)
+  backend:
+    build: .  # Ini akan mencari Dockerfile di root
+    ports:
+      - "3009:3000" # Asumsi Go Anda berjalan di port 8080
+    volumes:
+      - .:/app # Sinkronisasi kode untuk live reload
+      # environment:
+      # Tambahkan variabel environment yang
+      # dibutuhkan aplikasi Anda di sini
