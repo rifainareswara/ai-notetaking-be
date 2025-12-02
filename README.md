@@ -67,3 +67,69 @@ export default tseslint.config([
   },
 ])
 ```
+Deploy k8s
+
+```
+cd ~/project/ai-notetaking-be
+docker build -t ai-notetaking:v1 .
+```
+
+```
+docker save ai-notetaking:v1 | sudo k3s ctr images import -
+```
+
+```
+nano k8s-project.yaml
+```
+
+```
+# --- 1. DEPLOYMENT (Pengganti service 'backend' di compose) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-note-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-note-be
+  template:
+    metadata:
+      labels:
+        app: ai-note-be
+    spec:
+      containers:
+      - name: backend
+        image: ai-notetaking:v1   # Nama image yang tadi kita build
+        imagePullPolicy: Never    # PENTING: Gunakan image lokal (jangan download dari internet)
+        ports:
+        - containerPort: 3000     # Port aplikasi Go (internal)
+        # resources:              # Opsional: Membatasi penggunaan CPU/RAM
+        #   limits:
+        #     memory: "512Mi"
+        #     cpu: "500m"
+
+---
+# --- 2. SERVICE (Pengganti bagian 'ports' di compose) ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-note-service
+spec:
+  type: NodePort
+  selector:
+    app: ai-note-be
+  ports:
+    - port: 3000          # Port di cluster k8s
+      targetPort: 3000    # Port di aplikasi Go Anda
+      nodePort: 30009     # Port akses dari luar (Sesuai keinginan Anda: 3009)
+```
+
+```
+k apply -f k8s-project.yaml
+```
+
+```
+k get pods
+k get svc
+```
